@@ -22,6 +22,55 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                script {
+                    def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    sh "docker build -t ${IMAGE_NAME}:${commitId} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", passwordVariable: 'DOCKERHUB_PASS', usernameVariable: 'DOCKERHUB_USER')]) {
+                    script {
+                        def commitId = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                        sh "echo ${DOCKERHUB_PASS} | docker login -u ${DOCKERHUB_USER} --password-stdin"
+                        sh "docker push ${IMAGE_NAME}:${commitId}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}properties([
+    pipelineTriggers([
+        githubPush()
+    ])
+])
+
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = 'DockerHub'
+        IMAGE_NAME = 'saranyaseethamraju07/demo'
+        IMAGE_TAG = 'v1'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
                 sh 'docker build -t ${DOCKER_IMAGE}:${GIT_COMMIT} .'
             }
         }
