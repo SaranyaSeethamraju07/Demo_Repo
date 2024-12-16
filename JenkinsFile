@@ -8,7 +8,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = 'DockerHub'
+        DOCKERHUB_CREDENTIALS = 'dockerHubCredentials' // Replace with your actual credential ID
         IMAGE_NAME = 'saranyaseethamraju07/demo'
         IMAGE_TAG = 'v1'
     }
@@ -45,49 +45,6 @@ pipeline {
     post {
         always {
             sh 'docker logout'
-        }
-    }
-}properties([
-    pipelineTriggers([
-        githubPush()
-    ])
-])
-
-pipeline {
-    agent any
-
-    environment {
-        DOCKERHUB_CREDENTIALS = 'DockerHub'
-        IMAGE_NAME = 'saranyaseethamraju07/demo'
-        IMAGE_TAG = 'v1'
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t ${DOCKER_IMAGE}:${GIT_COMMIT} .'
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                sh 'echo $DOCKER_REGISTRY_CREDENTIALS_PSW | docker login ghcr.io -u $DOCKER_REGISTRY_CREDENTIALS_USR --password-stdin'
-                sh 'docker push ghcr.io/${DOCKER_IMAGE}:${GIT_COMMIT}'
-            }
-        }
-    }
-
-    post {
-        always {
-            node {
-                sh 'docker logout'
-            }
         }
     }
 }
